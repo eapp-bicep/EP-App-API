@@ -112,10 +112,10 @@ model User {
   updatedAt DateTime @updatedAt
 
   username     String @unique
-  email        String @unique
+  email        String? @unique
   passwordHash String
 
-  phone String
+  phone String?
 
   isEmailVerified Boolean @default(false)
   isPhoneVerified Boolean @default(false)
