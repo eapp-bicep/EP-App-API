@@ -1,0 +1,213 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Roles {
+  ADMIN
+  MENTOR
+  ENTREPRENEUR
+  INVESTOR
+}
+
+enum DocumentType {
+  PROFILE_PICTURE
+  IDEA_PITCH_DECK
+  MENTOR_PROFILE_PICTURE
+}
+
+// Independent Models
+model Occupation {
+  id              String         @id @default(uuid())
+  occupation_name String         @unique
+  PersonalInfo    PersonalInfo[]
+
+  @@map("occupations")
+}
+
+model Segment {
+  id           String         @id @default(uuid())
+  segment_name String         @unique
+  BusinessInfo BusinessInfo[]
+  Idea         Idea[]
+
+  @@map("segments")
+}
+
+model IdeaStage {
+  id    String @id @default(uuid())
+  stage String
+  Idea  Idea[]
+
+  @@map("ideaStages")
+}
+
+model Role {
+  id                   String                 @id @default(uuid())
+  role                 Roles                  @unique
+  OnboardingStepOnRole OnboardingStepOnRole[]
+  User                 User[]
+
+  @@map("roles")
+}
+
+model Address {
+  id String @id @default(uuid())
+
+  addressLine1 String
+  addressLine2 String?
+
+  pinCode      String
+  city         String
+  state        String
+  country      String
+  PersonalInfo PersonalInfo[]
+
+  @@map("addresses")
+}
+
+//-------
+
+model OnboardingStepOnRole {
+  id String @id @default(uuid())
+
+  role   Role   @relation(fields: [roleId], references: [id])
+  roleId String
+
+  stepName String
+  User     User[]
+
+  @@map("onboardingStepOnRole")
+}
+
+model Document {
+  id String @id @default(uuid())
+
+  imgFullPath     String
+  imgName         String
+  imgOriginalName String
+  imgDownloadUrl  String
+  bucket          String //Firebase bucket
+
+  imgType      DocumentType
+  PersonalInfo PersonalInfo[]
+  Idea         Idea?          @relation(fields: [ideaId], references: [id])
+  ideaId       String?
+
+  @@map("documents")
+}
+
+//----- Entity Models
+
+model User {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  username     String @unique
+  email        String @unique
+  passwordHash String
+
+  phone String
+
+  isEmailVerified Boolean @default(false)
+  isPhoneVerified Boolean @default(false)
+
+  role   Role   @relation(fields: [roleId], references: [id])
+  roleId String
+
+  onboardingStep   OnboardingStepOnRole @relation(fields: [onboardingStepId], references: [id])
+  onboardingStepId String
+
+  fcmToken         String?
+  refreshTokenHash String?
+
+  PersonalInfo PersonalInfo[]
+  BusinessInfo BusinessInfo[]
+  UserOnIdeas  UserOnIdeas[]
+
+  @@index(username)
+  @@index(email)
+  @@map("users")
+}
+
+model PersonalInfo {
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @id
+
+  firstName String
+  lastName  String
+
+  profileImage Document @relation(fields: [imageId], references: [id])
+  imageId      String
+
+  occupation   Occupation @relation(fields: [occupationId], references: [id])
+  occupationId String
+
+  address   Address @relation(fields: [addressId], references: [id])
+  addressId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("personalInformation")
+}
+
+//---- Entrepreneur - Specific
+model BusinessInfo {
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @id
+
+  organizationName String
+  officeAddress    String
+  officeContact    String
+  websiteUrl       String
+
+  domainOfWork Segment @relation(fields: [segmentId], references: [id])
+  segmentId    String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("businessInformation")
+}
+
+model Idea {
+  id String @id @default(uuid())
+
+  problemStatement String
+
+  ideaStage   IdeaStage @relation(fields: [ideaStageId], references: [id])
+  ideaStageId String
+
+  segment   Segment @relation(fields: [segmentId], references: [id])
+  segmentId String
+
+  proposedSolution String
+
+  documents Document[]
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  UserOnIdeas UserOnIdeas[]
+
+  @@map("ideas")
+}
+
+model UserOnIdeas {
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  idea   Idea   @relation(fields: [ideaId], references: [id])
+  ideaId String
+
+  @@id([userId, ideaId])
+  @@map("userOnIdeas")
+}
