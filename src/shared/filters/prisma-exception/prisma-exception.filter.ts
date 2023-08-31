@@ -46,9 +46,24 @@ export class PrismaClientExceptionFilter extends BaseExceptionFilter {
     host: ArgumentsHost,
   ) {
     const statusCode = this.errorCodesStatusMapping[exception.code];
-    const message = `[${exception.code}]: ${this.exceptionShortMessage(
+    let message = `[${exception.code}]: ${this.exceptionShortMessage(
       exception.message,
     )}`;
+
+    if (exception.code === 'P2002') {
+      if (
+        exception.meta !== null &&
+        (exception.meta!.target as []).some(
+          (e) => e === 'username' || e === 'email',
+        )
+      ) {
+        message = 'Account already exists';
+      } else {
+        message =
+          'Duplicates not allowed for ' +
+          (exception.meta?.target ?? ([] as any)).join(', ');
+      }
+    }
 
     if (!Object.keys(this.errorCodesStatusMapping).includes(exception.code)) {
       return super.catch(exception, host);

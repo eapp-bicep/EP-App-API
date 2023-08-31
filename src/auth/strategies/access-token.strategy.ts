@@ -25,7 +25,6 @@ export class AccessTokenStrategy extends PassportStrategy(
     const user = await this.prisma.user.findUnique({
       where: { id: payload.id },
     });
-    console.log({ user });
     return user;
   }
 }

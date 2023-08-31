@@ -21,7 +21,7 @@ export class SignUpAuthDto {
   @IsNotEmpty()
   password: string;
 
-  @Match('password')
+  @Match('password', { message: "Passwords don't match." })
   @IsNotEmpty()
   confirmPassword: string;
 }
