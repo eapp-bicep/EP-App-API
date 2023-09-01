@@ -2,7 +2,7 @@ import { CACHE_MANAGER, CacheTTL } from '@nestjs/cache-manager';
 import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cache } from 'cache-manager';
-import { PrismaService } from 'src/prisma';
+import { PrismaService } from 'src/global/prisma';
 import { CommonMessageResponse } from 'src/types';
 import {
   VerifyEmailCodeDto,
@@ -11,9 +11,9 @@ import {
   VerifyPhoneOTPDto,
 } from './dto';
 import { calcDateDiff } from 'src/shared/utils';
-import { MyTwilioService } from 'src/my-twilio';
-import {  Roles } from '@prisma/client';
-import { UserService } from 'src/user';
+import { MyTwilioService } from 'src/global/my-twilio';
+import { Roles } from '@prisma/client';
+import { UserService } from 'src/features/user';
 
 @Injectable()
 export class OnboardingService {

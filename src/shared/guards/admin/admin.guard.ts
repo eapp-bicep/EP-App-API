@@ -4,13 +4,19 @@ import {
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
+import { Roles } from '@prisma/client';
+import { PrismaService } from 'src/global/prisma';
 
-//TODO: Change admin implementation
 @Injectable()
 export class AdminGuard implements CanActivate {
-  canActivate(context: ExecutionContext): boolean {
+  constructor(private prisma: PrismaService) {}
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const { user } = context.switchToHttp().getRequest();
-    if (!user.isAdmin) throw new ForbiddenException('You are not authorized.');
+    const adminRoleId = await this.prisma.role.findUnique({
+      where: { role: Roles.ADMIN },
+    });
+    if (user.roleId !== adminRoleId)
+      throw new ForbiddenException('You are not authorized.');
     return true;
   }
 }

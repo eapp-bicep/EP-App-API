@@ -13,7 +13,11 @@ import {
   VerifyPhoneOTPDto,
 } from './dto';
 import { GetCurrentUser } from 'src/shared/decorators';
-import { SaveUserProfileDto, UserService } from 'src/user';
+import {
+  SaveBusinessInfoDto,
+  SaveUserProfileDto,
+  UserService,
+} from 'src/features/user';
 import { FileInterceptor } from '@nestjs/platform-express';
 @Controller('onboarding')
 export class OnboardingController {
@@ -65,5 +69,16 @@ export class OnboardingController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     return this.userService.saveUserProfile(userId, saveUserProfileDto, file);
+  }
+
+  @Post('/save-business-info')
+  saveBusinessInfo(
+    @GetCurrentUser('id') userId: string,
+    @Body() saveBusinessInfoDto: SaveBusinessInfoDto,
+  ) {
+    return this.userService.saveBusinessInformation(
+      userId,
+      saveBusinessInfoDto,
+    );
   }
 }

@@ -3,7 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { JwtPayload } from '../types';
 import { User } from '@prisma/client';
-import { PrismaService } from 'src/prisma';
+import { PrismaService } from 'src/global/prisma';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()

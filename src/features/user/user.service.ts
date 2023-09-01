@@ -4,11 +4,16 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { SaveUserProfileDto } from './dto/save-user-profile.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { CommonMessageResponse } from 'src/types';
-import { PrismaService } from 'src/prisma';
-import { CloudinaryService } from 'src/cloudinary';
-import { DocumentType, OnboardingStepOnRole, Roles } from '@prisma/client';
+import { PrismaService } from 'src/global/prisma';
+import { CloudinaryService } from 'src/dynamic-modules/cloudinary';
+import {
+  DocumentType,
+  OnboardingStepOnRole,
+  Roles,
+  User,
+} from '@prisma/client';
+import { SaveBusinessInfoDto } from './dto';
 
 @Injectable()
 export class UserService {
@@ -36,11 +41,6 @@ export class UserService {
     const image = await this.cloudinary.uploadFile(
       profileImage,
       `${userId}/profile`,
-    );
-
-    const onboardingStep = await this.getOnboardingStep(
-      'PersonalInformation',
-      Roles.ENTREPRENEUR,
     );
 
     await this.prisma.personalInfo.create({
@@ -72,29 +72,72 @@ export class UserService {
       },
     });
 
-    await this.prisma.user.update({
+    await this.updateUserOnboardingStep(
+      userId,
+      'PersonalInformation',
+      Roles.ENTREPRENEUR,
+    );
+    return { message: 'We have saved your personal data, thank you.' };
+  }
+
+  async saveBusinessInformation(
+    userId: string,
+    saveBusinessInfoDto: SaveBusinessInfoDto,
+  ): Promise<CommonMessageResponse> {
+    const exists = await this.prisma.businessInfo.findUnique({
+      where: { userId },
+    });
+    if (exists)
+      throw new ForbiddenException(
+        'Business Information has been saved already.',
+      );
+    await this.prisma.businessInfo.create({
+      data: {
+        user: { connect: { id: userId } },
+        ...saveBusinessInfoDto,
+        domainOfWork: {
+          connect: {
+            id: saveBusinessInfoDto.domainOfWork,
+          },
+        },
+      },
+    });
+    await this.updateUserOnboardingStep(
+      userId,
+      'BusinessDetails',
+      Roles.ENTREPRENEUR,
+    );
+    return { message: 'Saved business information.' };
+  }
+
+  // findAll() {
+  //   return `This action returns all user`;
+  // }
+
+  // findOne(id: number) {
+  //   return `This action returns a #${id} user`;
+  // }
+
+  // update(id: number, updateUserDto: UpdateUserDto) {
+  //   return `This action updates a #${id} user`;
+  // }
+
+  // remove(id: number) {
+  //   return `This action removes a #${id} user`;
+  // }
+
+  async updateUserOnboardingStep(
+    userId: string,
+    stepName: string,
+    role: Roles,
+  ): Promise<User> {
+    const onboardingStep = await this.getOnboardingStep(stepName, role);
+    return await this.prisma.user.update({
       where: { id: userId },
       data: {
         onboardingStep: { connect: onboardingStep },
       },
     });
-    return { message: 'We have saved your personal data, thank you.' };
-  }
-
-  findAll() {
-    return `This action returns all user`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
-  }
-
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} user`;
   }
 
   async getOnboardingStep(
