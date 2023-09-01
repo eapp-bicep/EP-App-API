@@ -12,6 +12,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-yet';
 import { AccessTokenStrategy, RefreshTokenStrategy } from './auth/strategies';
 import { MyTwilioModule } from './my-twilio/my-twilio.module';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -20,15 +21,6 @@ import { MyTwilioModule } from './my-twilio/my-twilio.module';
     AuthModule,
     IdeasModule,
     UserModule,
-    // TwilioModule.forRootAsync({
-    //   isGlobal: true,
-    //   imports: [ConfigModule],
-    //   useFactory: (cfg: ConfigService) => ({
-    //     accountSid: cfg.get('TWILIO_ACCOUNT_SID'),
-    //     authToken: cfg.get('TWILIO_AUTH_TOKEN'),
-    //   }),
-    //   inject: [ConfigService],
-    // }),
     CacheModule.registerAsync({
       isGlobal: true,
       useFactory: async (cfg: ConfigService) => ({
@@ -43,6 +35,7 @@ import { MyTwilioModule } from './my-twilio/my-twilio.module';
       inject: [ConfigService],
     }),
     MyTwilioModule,
+    CloudinaryModule,
   ],
   controllers: [],
   providers: [

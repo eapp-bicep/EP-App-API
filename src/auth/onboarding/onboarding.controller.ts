@@ -1,4 +1,10 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
 import { OnboardingService } from './onboarding.service';
 import {
   VerifyEmailCodeDto,
@@ -7,10 +13,14 @@ import {
   VerifyPhoneOTPDto,
 } from './dto';
 import { GetCurrentUser } from 'src/shared/decorators';
-
+import { SaveUserProfileDto, UserService } from 'src/user';
+import { FileInterceptor } from '@nestjs/platform-express';
 @Controller('onboarding')
 export class OnboardingController {
-  constructor(private onboardingService: OnboardingService) {}
+  constructor(
+    private onboardingService: OnboardingService,
+    private userService: UserService,
+  ) {}
 
   @Post('/verify-email')
   sendEmailVerificationCode(
@@ -45,5 +55,15 @@ export class OnboardingController {
     @Body() verifyPhoneOTPDto: VerifyPhoneOTPDto,
   ) {
     return this.onboardingService.verifyPhoneOTP(userId, verifyPhoneOTPDto);
+  }
+
+  @Post('/save-profile')
+  @UseInterceptors(FileInterceptor('profileImage'))
+  saveUserProfile(
+    @GetCurrentUser('id') userId: string,
+    @Body() saveUserProfileDto: SaveUserProfileDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.userService.saveUserProfile(userId, saveUserProfileDto, file);
   }
 }

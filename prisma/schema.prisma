@@ -90,13 +90,15 @@ model OnboardingStepOnRole {
 model Document {
   id String @id @default(uuid())
 
-  imgFullPath     String
-  imgName         String
-  imgOriginalName String
-  imgDownloadUrl  String
-  bucket          String //Firebase bucket
+  //Specific to cloudinary fields in comments
+  imgFullPath     String //Public_ID
+  imgName         String //assetId
+  imgOriginalName String //original_filename
+  imgDownloadUrl  String //secure_url
+  bucket          String //folder
 
-  imgType      DocumentType
+  imgType DocumentType
+
   PersonalInfo PersonalInfo[]
   Idea         Idea?          @relation(fields: [ideaId], references: [id])
   ideaId       String?
@@ -111,7 +113,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  username     String @unique
+  username     String  @unique
   email        String? @unique
   passwordHash String
 
@@ -145,13 +147,13 @@ model PersonalInfo {
   firstName String
   lastName  String
 
-  profileImage Document @relation(fields: [imageId], references: [id])
+  profileImage Document @relation(fields: [imageId], references: [id], onDelete: Cascade)
   imageId      String
 
   occupation   Occupation @relation(fields: [occupationId], references: [id])
   occupationId String
 
-  address   Address @relation(fields: [addressId], references: [id])
+  address   Address @relation(fields: [addressId], references: [id], onDelete: Cascade)
   addressId String
 
   createdAt DateTime @default(now())

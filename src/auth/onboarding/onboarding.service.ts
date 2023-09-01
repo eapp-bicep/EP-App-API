@@ -12,6 +12,8 @@ import {
 } from './dto';
 import { calcDateDiff } from 'src/shared/utils';
 import { MyTwilioService } from 'src/my-twilio';
+import {  Roles } from '@prisma/client';
+import { UserService } from 'src/user';
 
 @Injectable()
 export class OnboardingService {
@@ -20,6 +22,7 @@ export class OnboardingService {
     @Inject(CACHE_MANAGER) private redis: Cache,
     private config: ConfigService,
     private myTwilio: MyTwilioService,
+    private userService: UserService,
   ) {}
 
   async sendEmailVerificationCode(
@@ -62,10 +65,17 @@ export class OnboardingService {
       throw new ForbiddenException(
         'Verification code not valid or check your phone number.',
       );
-
+    const onboardingStep = await this.userService.getOnboardingStep(
+      'EmailVerification',
+      Roles.ENTREPRENEUR,
+    );
     await this.prisma.user.update({
       where: { id: userId },
-      data: { email: verifyEmailCodeDto.email, isEmailVerified: true },
+      data: {
+        email: verifyEmailCodeDto.email,
+        isEmailVerified: true,
+        onboardingStep: { connect: onboardingStep },
+      },
     });
     await this.redis.del(`email_${verifyEmailCodeDto.email}`);
     return { message: 'Your email has been verified successfully' };
@@ -109,9 +119,18 @@ export class OnboardingService {
         'Verification code not valid or check your phone number.',
       );
 
+    const onboardingStep = await this.userService.getOnboardingStep(
+      'PhoneVerification',
+      Roles.ENTREPRENEUR,
+    );
+
     await this.prisma.user.update({
       where: { id: userId },
-      data: { phone: verifyOtpDTO.phone, isPhoneVerified: true },
+      data: {
+        phone: verifyOtpDTO.phone,
+        isPhoneVerified: true,
+        onboardingStep: { connect: onboardingStep },
+      },
     });
     await this.redis.del(`phone_${verifyOtpDTO.phone}`);
     return { message: 'Your phone has been verified successfully' };

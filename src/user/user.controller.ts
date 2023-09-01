@@ -1,15 +1,32 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseInterceptors,
+  UploadedFile,
+} from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
+import { SaveUserProfileDto } from './dto/save-user-profile.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { GetCurrentUser } from 'src/shared/decorators';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.userService.create(createUserDto);
+  @UseInterceptors(FileInterceptor('profileImage'))
+  create(
+    @GetCurrentUser('id') userId: string,
+    @Body() saveUserProfileDto: SaveUserProfileDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.userService.saveUserProfile(userId, saveUserProfileDto, file);
   }
 
   @Get()

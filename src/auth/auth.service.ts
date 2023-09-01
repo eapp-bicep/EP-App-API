@@ -8,6 +8,7 @@ import { MyArgonOptions } from 'src/types';
 import { JwtService } from '@nestjs/jwt';
 import { Roles } from '@prisma/client';
 import { LoginAuthDto } from './dto/login-auth.dto';
+import { UserService } from 'src/user';
 
 @Injectable()
 export class AuthService {
@@ -15,14 +16,18 @@ export class AuthService {
     private prisma: PrismaService,
     private config: ConfigService,
     private jwt: JwtService,
+    private userService: UserService,
   ) {}
 
   async signUp(authDto: SignUpAuthDto): Promise<AuthResponse> {
     const passwordHash = await this.hashData(authDto.password);
-    const onboardingStep =
-      await this.prisma.onboardingStepOnRole.findFirstOrThrow({
-        where: { stepName: 'SignUp', role: { role: Roles.ENTREPRENEUR } },
-      });
+    const onboardingStep = await this.userService.getOnboardingStep(
+      'SignUp',
+      Roles.ENTREPRENEUR,
+    );
+    // await this.prisma.onboardingStepOnRole.findFirstOrThrow({
+    //   where: { stepName: 'SignUp', role: { role: Roles.ENTREPRENEUR } },
+    // });
     const user = await this.prisma.user.create({
       data: {
         username: authDto.username,
