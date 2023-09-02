@@ -25,6 +25,16 @@ export class CloudinaryService {
     });
   }
 
+  async uploadFiles(files: Express.Multer.File[], subfolder: string) {
+    const fileResponses = await Promise.all(
+      files.map(async (file): Promise<CloudinaryResponse> => {
+        const res = await this.uploadFile(file, subfolder);
+        return res;
+      }),
+    );
+    return fileResponses;
+  }
+
   async deleteFile(idOrPath: string): Promise<{ message: string }> {
     return await cloudinary.uploader.destroy(idOrPath, { invalidate: true });
   }

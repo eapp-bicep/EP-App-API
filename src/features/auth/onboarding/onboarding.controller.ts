@@ -1,8 +1,11 @@
 import {
+  BadRequestException,
   Body,
   Controller,
+  ParseBoolPipe,
   Post,
   UploadedFile,
+  UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
 import { OnboardingService } from './onboarding.service';
@@ -18,12 +21,15 @@ import {
   SaveUserProfileDto,
   UserService,
 } from 'src/features/user';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { CreateIdeaDto, IdeasService } from 'src/features/ideas';
+import { Roles } from '@prisma/client';
 @Controller('onboarding')
 export class OnboardingController {
   constructor(
     private onboardingService: OnboardingService,
     private userService: UserService,
+    private ideaService: IdeasService,
   ) {}
 
   @Post('/verify-email')
@@ -74,11 +80,44 @@ export class OnboardingController {
   @Post('/save-business-info')
   saveBusinessInfo(
     @GetCurrentUser('id') userId: string,
-    @Body() saveBusinessInfoDto: SaveBusinessInfoDto,
+    @Body('isBusinessEstablished', ParseBoolPipe)
+    isBusinessEstablished: boolean,
+    @Body('businessInfo') saveBusinessInfoDto: SaveBusinessInfoDto,
   ) {
+    if (!isBusinessEstablished) {
+      throw new BadRequestException(
+        'Business is not established, so it cannot be saved.',
+      );
+    }
     return this.userService.saveBusinessInformation(
       userId,
       saveBusinessInfoDto,
     );
+  }
+
+  @Post('/upload-idea')
+  @UseInterceptors(FilesInterceptor('pitchFiles'))
+  async saveIdea(
+    @GetCurrentUser('id') userId: string,
+    @Body() saveIdeaDto: CreateIdeaDto,
+    @UploadedFiles() files: Array<Express.Multer.File>,
+  ) {
+    await this.ideaService.create(userId, saveIdeaDto, files);
+    await this.userService.updateUserOnboardingStep(
+      userId,
+      'IdeaInformation',
+      Roles.ENTREPRENEUR,
+    );
+    return { message: 'Uploaded idea successfully' };
+  }
+
+  @Post('/finish')
+  async finishOnboarding(@GetCurrentUser('id') userId: string) {
+    await this.userService.updateUserOnboardingStep(
+      userId,
+      'Finished',
+      Roles.ENTREPRENEUR,
+    );
+    return { message: 'Thank you for your patience. Please proceed.' };
   }
 }
