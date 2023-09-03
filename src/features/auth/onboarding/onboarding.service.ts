@@ -1,5 +1,10 @@
 import { CACHE_MANAGER, CacheTTL } from '@nestjs/cache-manager';
-import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotAcceptableException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cache } from 'cache-manager';
 import { PrismaService } from 'src/global/prisma';
@@ -12,7 +17,7 @@ import {
 } from './dto';
 import { calcDateDiff } from 'src/shared/utils';
 import { MyTwilioService } from 'src/global/my-twilio';
-import { Roles } from '@prisma/client';
+import { Roles, User } from '@prisma/client';
 import { UserService } from 'src/features/user';
 
 @Injectable()
@@ -28,7 +33,7 @@ export class OnboardingService {
   async sendEmailVerificationCode(
     userId: string,
     verifyEmailDto: VerifyEmailDto,
-  ): Promise<any> {
+  ): Promise<CommonMessageResponse> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { email: true, updatedAt: true, isEmailVerified: true },
@@ -40,7 +45,9 @@ export class OnboardingService {
       );
     const response = await this.myTwilio.sendCodeToEmail(verifyEmailDto.email);
     await this.redis.set(`email_${verifyEmailDto.email}`, response);
-    return response;
+    return {
+      message: `Your verification code has been sent to your email.`,
+    };
   }
 
   @CacheTTL(1000 * 60 * 10) //10 min - due to twilio timeout
@@ -85,7 +92,7 @@ export class OnboardingService {
   async sendPhoneOTP(
     userId: string,
     verifyPhoneDto: VerifyPhoneDto,
-  ): Promise<any> {
+  ): Promise<CommonMessageResponse> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { phone: true, updatedAt: true, isPhoneVerified: true },
@@ -97,7 +104,9 @@ export class OnboardingService {
       );
     const response = await this.myTwilio.sendOtpToPhone(verifyPhoneDto.phone);
     await this.redis.set(`phone_${verifyPhoneDto.phone}`, response);
-    return response;
+    return {
+      message: `Your OTP has been sent to your phone number.`,
+    };
   }
 
   async verifyPhoneOTP(
@@ -134,5 +143,21 @@ export class OnboardingService {
     });
     await this.redis.del(`phone_${verifyOtpDTO.phone}`);
     return { message: 'Your phone has been verified successfully' };
+  }
+
+  async finishOnboarding(user: User) {
+    const profile = await this.prisma.personalInfo.findUnique({
+      where: { userId: user.id },
+    });
+    if (user.isEmailVerified && user.isPhoneVerified && !profile)
+      throw new NotAcceptableException(
+        'Please complete email and phone verification and also upload your profile.',
+      );
+    await this.userService.updateUserOnboardingStep(
+      user.id,
+      'Finished',
+      Roles.ENTREPRENEUR,
+    );
+    return { message: 'Thank you for your patience. Please proceed.' };
   }
 }

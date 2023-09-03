@@ -23,7 +23,7 @@ import {
 } from 'src/features/user';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { CreateIdeaDto, IdeasService } from 'src/features/ideas';
-import { Roles } from '@prisma/client';
+import { Roles, User } from '@prisma/client';
 @Controller('onboarding')
 export class OnboardingController {
   constructor(
@@ -112,12 +112,7 @@ export class OnboardingController {
   }
 
   @Post('/finish')
-  async finishOnboarding(@GetCurrentUser('id') userId: string) {
-    await this.userService.updateUserOnboardingStep(
-      userId,
-      'Finished',
-      Roles.ENTREPRENEUR,
-    );
-    return { message: 'Thank you for your patience. Please proceed.' };
+  async finishOnboarding(@GetCurrentUser() user: User) {
+    return this.onboardingService.finishOnboarding(user);
   }
 }

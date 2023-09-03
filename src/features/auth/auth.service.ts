@@ -25,9 +25,6 @@ export class AuthService {
       'SignUp',
       Roles.ENTREPRENEUR,
     );
-    // await this.prisma.onboardingStepOnRole.findFirstOrThrow({
-    //   where: { stepName: 'SignUp', role: { role: Roles.ENTREPRENEUR } },
-    // });
     const user = await this.prisma.user.create({
       data: {
         username: authDto.username,

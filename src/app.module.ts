@@ -16,6 +16,7 @@ import {
 } from './features/auth/strategies';
 import { MyTwilioModule } from './global/my-twilio/my-twilio.module';
 import { CloudinaryModule } from './dynamic-modules/cloudinary/cloudinary.module';
+import { InfoModule } from './features/info/info.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { CloudinaryModule } from './dynamic-modules/cloudinary/cloudinary.module
     }),
     MyTwilioModule,
     CloudinaryModule,
+    InfoModule,
   ],
   controllers: [],
   providers: [

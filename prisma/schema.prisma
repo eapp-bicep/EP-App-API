@@ -26,7 +26,7 @@ enum DocumentType {
 // Independent Models
 model Occupation {
   id              String         @id @default(uuid())
-  occupation_name String         @unique
+  occupationName String         @unique
   PersonalInfo    PersonalInfo[]
 
   @@map("occupations")
@@ -34,7 +34,7 @@ model Occupation {
 
 model Segment {
   id           String         @id @default(uuid())
-  segment_name String         @unique
+  segmentName String         @unique
   BusinessInfo BusinessInfo[]
   Idea         Idea[]
 

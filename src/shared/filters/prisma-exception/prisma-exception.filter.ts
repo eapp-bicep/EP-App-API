@@ -46,9 +46,7 @@ export class PrismaClientExceptionFilter extends BaseExceptionFilter {
     host: ArgumentsHost,
   ) {
     const statusCode = this.errorCodesStatusMapping[exception.code];
-    let message = `[${exception.code}]: ${this.exceptionShortMessage(
-      exception.message,
-    )}`;
+    let message = this.exceptionShortMessage(exception.message);
 
     if (exception.code === 'P2002') {
       if (
