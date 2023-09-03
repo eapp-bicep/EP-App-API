@@ -11,11 +11,5 @@ export function calcDateDiff(
   const months = Math.floor(days / 31);
   const years = Math.floor(months / 12);
 
-  // let message = date2.toDateString();
-  // message += ' was ';
-  // message += days + ' days ';
-  // message += months + ' months ';
-  // message += years + ' years ago \n';
-  console.log(diff);
   return { minutes, days, months, years };
 }

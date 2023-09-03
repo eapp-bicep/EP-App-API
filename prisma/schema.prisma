@@ -21,22 +21,28 @@ enum DocumentType {
   PROFILE_PICTURE
   IDEA_PITCH_DECK
   MENTOR_PROFILE_PICTURE
+  MENTOR_RESUME
 }
 
 // Independent Models
 model Occupation {
-  id              String         @id @default(uuid())
-  occupationName String         @unique
-  PersonalInfo    PersonalInfo[]
+  id             String @id @default(uuid())
+  occupationName String @unique
+
+  PersonalInfo PersonalInfo[]
 
   @@map("occupations")
 }
 
 model Segment {
-  id           String         @id @default(uuid())
-  segmentName String         @unique
+  id          String @id @default(uuid())
+  segmentName String @unique
+
   BusinessInfo BusinessInfo[]
   Idea         Idea[]
+
+  ProfessionalInformation ProfessionalInformation[] @relation("fieldsOfInterest")
+  MentorDomainOfWork      ProfessionalInformation[] @relation("domainOfWork")
 
   @@map("segments")
 }
@@ -44,16 +50,19 @@ model Segment {
 model IdeaStage {
   id    String @id @default(uuid())
   stage String
-  Idea  Idea[]
+
+  Idea Idea[]
 
   @@map("ideaStages")
 }
 
 model Role {
-  id                   String                 @id @default(uuid())
-  role                 Roles                  @unique
+  id   String @id @default(uuid())
+  role Roles  @unique
+
   OnboardingStepOnRole OnboardingStepOnRole[]
   User                 User[]
+  SubscriptionPlan     Plan[]
 
   @@map("roles")
 }
@@ -99,11 +108,54 @@ model Document {
 
   imgType DocumentType
 
-  PersonalInfo PersonalInfo[]
-  Idea         Idea?          @relation(fields: [ideaId], references: [id])
-  ideaId       String?
+  PersonalInfo            PersonalInfo[]
+  Idea                    Idea?                     @relation(fields: [ideaId], references: [id])
+  ideaId                  String?
+  ProfessionalInformation ProfessionalInformation[]
 
   @@map("documents")
+}
+
+model Plan {
+  id String @id @default(uuid())
+
+  planName         String
+  durationInMonths Int //in months
+  isActive         Boolean @default(false)
+  pricePerMonth    Int //Rupees
+  discount         Int? //Percentage
+  pricePerYear     Int //For discount per year
+
+  role         Role           @relation(fields: [roleId], references: [id])
+  roleId       String
+  Subscription Subscription[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("plans")
+}
+
+model Invoice {
+  id String @id @default(uuid())
+
+  txnId        String //Razorpay id
+  amount       BigInt
+  currency     String
+  status       String
+  orderId      String
+  invoiceId    String
+  method       String
+  refundStatus String?
+  email        String
+  contact      String
+  txnCreatedAt DateTime
+
+  createdAt DateTime @default(now())
+
+  Subscription Subscription[]
+
+  @@map("invoices")
 }
 
 //----- Entity Models
@@ -131,9 +183,11 @@ model User {
   fcmToken         String?
   refreshTokenHash String?
 
-  PersonalInfo PersonalInfo[]
-  BusinessInfo BusinessInfo[]
-  UserOnIdeas  UserOnIdeas[]
+  PersonalInfo            PersonalInfo[]
+  BusinessInfo            BusinessInfo[]
+  UserOnIdeas             UserOnIdeas[]
+  ProfessionalInformation ProfessionalInformation[]
+  Subscription            Subscription[]
 
   @@index(username)
   @@index(email)
@@ -212,4 +266,51 @@ model UserOnIdeas {
 
   @@id([userId, ideaId])
   @@map("userOnIdeas")
+}
+
+// ----- Mentor Specific
+model ProfessionalInformation {
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @id
+
+  linkedIn String
+  resume   Document @relation(fields: [resumeId], references: [id])
+  resumeId String
+
+  segment   Segment @relation(fields: [segmentId], references: [id], name: "domainOfWork")
+  segmentId String
+
+  priorMentorExperience Boolean @default(false)
+  currentJobTitle       String
+
+  organization String
+
+  timeInvestment Int //In hours per week
+
+  fieldsOfInterest Segment[] @relation("fieldsOfInterest")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Subscription {
+  id String @id @default(uuid())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  plan   Plan   @relation(fields: [planId], references: [id])
+  planId String
+
+  startDate DateTime
+  endDate   DateTime
+
+  invoice   Invoice @relation(fields: [invoiceId], references: [id])
+  invoiceId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, planId])
+  @@map("subscriptions")
 }

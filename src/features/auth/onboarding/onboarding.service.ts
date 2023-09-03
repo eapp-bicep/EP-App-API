@@ -43,8 +43,10 @@ export class OnboardingService {
       throw new ForbiddenException(
         `Please try again after ${1440 - diff.minutes} minutes.`,
       );
-    const response = await this.myTwilio.sendCodeToEmail(verifyEmailDto.email);
-    await this.redis.set(`email_${verifyEmailDto.email}`, response);
+    //TODO: EMAIL is not working due to twilio
+    // const response = await this.myTwilio.sendCodeToEmail(verifyEmailDto.email);
+    // await this.redis.set(`email_${verifyEmailDto.email}`, response);
+
     return {
       message: `Your verification code has been sent to your email.`,
     };
@@ -55,23 +57,23 @@ export class OnboardingService {
     userId: string,
     verifyEmailCodeDto: VerifyEmailCodeDto,
   ): Promise<CommonMessageResponse> {
-    const emailRes = (await this.redis.get(
-      `email_${verifyEmailCodeDto.email}`,
-    )) as any;
-    if (!emailRes)
-      throw new ForbiddenException(
-        'Email verification code expired or check your email.',
-      );
+    //TODO: EMAIL is not working due to twilio
+    // const emailRes = (await this.redis.get(
+    //   `email_${verifyEmailCodeDto.email}`,
+    // )) as any;
+    // if (!emailRes)
+    //   throw new ForbiddenException(
+    //     'Email verification code expired or check your email.',
+    //   );
+    // const response = await this.myTwilio.verifyEmailCode(
+    //   emailRes.sid,
+    //   verifyEmailCodeDto.code,
+    // );
 
-    const response = await this.myTwilio.verifyEmailCode(
-      emailRes.sid,
-      verifyEmailCodeDto.code,
-    );
-
-    if (response.status !== 'approved')
-      throw new ForbiddenException(
-        'Verification code not valid or check your phone number.',
-      );
+    // if (response.status !== 'approved')
+    //   throw new ForbiddenException(
+    //     'Verification code not valid or check your phone number.',
+    //   );
     const onboardingStep = await this.userService.getOnboardingStep(
       'EmailVerification',
       Roles.ENTREPRENEUR,
@@ -84,7 +86,7 @@ export class OnboardingService {
         onboardingStep: { connect: onboardingStep },
       },
     });
-    await this.redis.del(`email_${verifyEmailCodeDto.email}`);
+    // await this.redis.del(`email_${verifyEmailCodeDto.email}`);
     return { message: 'Your email has been verified successfully' };
   }
 
@@ -102,8 +104,9 @@ export class OnboardingService {
       throw new ForbiddenException(
         `Please try again after ${1440 - diff.minutes} minutes.`,
       );
-    const response = await this.myTwilio.sendOtpToPhone(verifyPhoneDto.phone);
-    await this.redis.set(`phone_${verifyPhoneDto.phone}`, response);
+    //TODO: PHONE is not working due to twilio
+    // const response = await this.myTwilio.sendOtpToPhone(verifyPhoneDto.phone);
+    // await this.redis.set(`phone_${verifyPhoneDto.phone}`, response);
     return {
       message: `Your OTP has been sent to your phone number.`,
     };
@@ -113,20 +116,21 @@ export class OnboardingService {
     userId: string,
     verifyOtpDTO: VerifyPhoneOTPDto,
   ): Promise<CommonMessageResponse> {
-    const phoneRes = (await this.redis.get(
-      `phone_${verifyOtpDTO.phone}`,
-    )) as any;
+    //TODO: EMAIL is not working due to twilio
+    // const phoneRes = (await this.redis.get(
+    //   `phone_${verifyOtpDTO.phone}`,
+    // )) as any;
 
-    if (!phoneRes) throw new ForbiddenException('OTP Expired, resend otp.');
-    const response = await this.myTwilio.verifyPhoneOtp(
-      phoneRes.sid,
-      verifyOtpDTO.otp,
-    );
+    // if (!phoneRes) throw new ForbiddenException('OTP Expired, resend otp.');
+    // const response = await this.myTwilio.verifyPhoneOtp(
+    //   phoneRes.sid,
+    //   verifyOtpDTO.otp,
+    // );
 
-    if (response.status !== 'approved')
-      throw new ForbiddenException(
-        'Verification code not valid or check your phone number.',
-      );
+    // if (response.status !== 'approved')
+    //   throw new ForbiddenException(
+    //     'Verification code not valid or check your phone number.',
+    //   );
 
     const onboardingStep = await this.userService.getOnboardingStep(
       'PhoneVerification',
@@ -141,7 +145,7 @@ export class OnboardingService {
         onboardingStep: { connect: onboardingStep },
       },
     });
-    await this.redis.del(`phone_${verifyOtpDTO.phone}`);
+    // await this.redis.del(`phone_${verifyOtpDTO.phone}`);
     return { message: 'Your phone has been verified successfully' };
   }
 

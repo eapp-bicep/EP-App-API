@@ -14,7 +14,7 @@ import { CreateIdeaStageDto } from './dto/create-idea-stage.dto';
 import { UpdateIdeaStageDto } from './dto/update-idea-stage.dto';
 import { Public } from 'src/shared/decorators';
 
-@Controller('idea-stage')
+@Controller('info/idea-stage')
 export class IdeaStageController {
   constructor(private readonly ideaStageService: IdeaStageService) {}
 

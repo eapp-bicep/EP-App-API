@@ -26,7 +26,7 @@ export class MyTwilioService {
   }
 
   async sendCodeToEmail(email: string) {
-    const response = this.twilioVerifications.create({
+    const response = await this.twilioVerifications.create({
       to: email,
       channel: 'email',
     });
@@ -34,7 +34,7 @@ export class MyTwilioService {
   }
 
   async verifyEmailCode(verificationSid: string, code: string) {
-    const response = this.twilioVerificationCheck.create({
+    const response = await this.twilioVerificationCheck.create({
       verificationSid,
       code,
     });
@@ -43,7 +43,7 @@ export class MyTwilioService {
   }
 
   async sendOtpToPhone(phone: string) {
-    const response = this.twilioVerifications.create({
+    const response = await this.twilioVerifications.create({
       to: `+91${phone}`,
       channel: 'sms',
     });
@@ -51,7 +51,7 @@ export class MyTwilioService {
   }
 
   async verifyPhoneOtp(verificationSid: string, otp: string) {
-    const response = this.twilioVerificationCheck.create({
+    const response = await this.twilioVerificationCheck.create({
       verificationSid,
       code: otp,
     });
