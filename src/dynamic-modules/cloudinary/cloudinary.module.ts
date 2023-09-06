@@ -1,8 +1,9 @@
-import { DynamicModule, Module } from '@nestjs/common';
+import { DynamicModule, Global, Module } from '@nestjs/common';
 import { CloudinaryService } from './cloudinary.service';
 import { CloudinaryProvider } from './cloudinary/cloudinary.provider';
 
 ///Pass moduleFolder parameter to set the module level folder.
+@Global()
 @Module({
   // providers: [CloudinaryService, CloudinaryProvider],
   // exports: [CloudinaryService, CloudinaryProvider],

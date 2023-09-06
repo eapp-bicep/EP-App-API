@@ -39,6 +39,10 @@ export class CloudinaryService {
     return await cloudinary.uploader.destroy(idOrPath, { invalidate: true });
   }
 
+  async deleteFiles(paths: string[]) {
+    return await cloudinary.api.delete_resources(paths, { invalidate: true });
+  }
+
   async deleteEntireFolder(prefix: string) {
     return await cloudinary.api.delete_resources_by_prefix(prefix);
   }

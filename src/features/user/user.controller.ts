@@ -4,6 +4,8 @@ import {
   Body,
   UseInterceptors,
   UploadedFile,
+  Get,
+  Delete,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { SaveUserProfileDto } from './dto/save-user-profile.dto';
@@ -14,6 +16,15 @@ import { FileInterceptor } from '@nestjs/platform-express';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @Get()
+  getUser(@GetCurrentUser('id') userId: string) {
+    return this.userService.getUserData(userId);
+  }
+
+  @Delete()
+  deleteUser(@GetCurrentUser('id') userId: string) {
+    return this.userService.deleteUser(userId);
+  }
   @Post()
   @UseInterceptors(FileInterceptor('profileImage'))
   create(

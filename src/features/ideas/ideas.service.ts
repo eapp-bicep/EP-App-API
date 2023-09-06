@@ -1,8 +1,12 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { CreateIdeaDto, UpdateIdeaDto } from './dto';
 
 import { PrismaService } from 'src/global/prisma';
-import { ResponseWithData } from 'src/types';
+import { CommonMessageResponse, ResponseWithData } from 'src/types';
 import { DocumentType, Idea } from '@prisma/client';
 import { CloudinaryService } from 'src/dynamic-modules/cloudinary';
 
@@ -78,7 +82,20 @@ export class IdeasService {
     return `This action updates a #${id} idea`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} idea`;
+  async remove(id: string): Promise<CommonMessageResponse> {
+    const idea = await this.prisma.idea.findUniqueOrThrow({
+      where: { id },
+      include: { documents: { select: { id: true, imgFullPath: true } } },
+    });
+    const res = await this.cloudinary.deleteFiles(
+      idea.documents.map((e) => e.imgFullPath),
+    );
+    if (res.partial !== false) {
+      throw new InternalServerErrorException(
+        'Could not delete the idea files. Try again.',
+      );
+    }
+    await this.prisma.idea.delete({ where: { id } });
+    return { message: 'Deleted the Idea.' };
   }
 }

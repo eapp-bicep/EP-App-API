@@ -109,7 +109,7 @@ model Document {
   imgType DocumentType
 
   PersonalInfo            PersonalInfo[]
-  Idea                    Idea?                     @relation(fields: [ideaId], references: [id])
+  Idea                    Idea?                     @relation(fields: [ideaId], references: [id], onDelete: Cascade)
   ideaId                  String?
   ProfessionalInformation ProfessionalInformation[]
 
@@ -195,19 +195,19 @@ model User {
 }
 
 model PersonalInfo {
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String @id
 
   firstName String
   lastName  String
 
-  profileImage Document @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  profileImage Document @relation(fields: [imageId], references: [id])
   imageId      String
 
   occupation   Occupation @relation(fields: [occupationId], references: [id])
   occupationId String
 
-  address   Address @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  address   Address @relation(fields: [addressId], references: [id])
   addressId String
 
   createdAt DateTime @default(now())
@@ -218,7 +218,7 @@ model PersonalInfo {
 
 //---- Entrepreneur - Specific
 model BusinessInfo {
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String @id
 
   organizationName String
@@ -258,10 +258,10 @@ model Idea {
 }
 
 model UserOnIdeas {
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String
 
-  idea   Idea   @relation(fields: [ideaId], references: [id])
+  idea   Idea   @relation(fields: [ideaId], references: [id], onDelete: Cascade)
   ideaId String
 
   @@id([userId, ideaId])

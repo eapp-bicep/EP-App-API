@@ -38,6 +38,6 @@ export class IdeasController {
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.ideasService.remove(+id);
+    return this.ideasService.remove(id);
   }
 }

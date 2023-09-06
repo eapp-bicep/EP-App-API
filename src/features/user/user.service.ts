@@ -4,18 +4,52 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { SaveUserProfileDto } from './dto/save-user-profile.dto';
-import { ResponseWithData } from 'src/types';
+import { CommonMessageResponse, ResponseWithData } from 'src/types';
 import { PrismaService } from 'src/global/prisma';
 import { CloudinaryService } from 'src/dynamic-modules/cloudinary';
 import { DocumentType, OnboardingStepOnRole, Roles } from '@prisma/client';
 import { SaveBusinessInfoDto, SaveProfessionalInfoDto } from './dto';
+import { IdeasService } from '../ideas';
 
 @Injectable()
 export class UserService {
   constructor(
     private prisma: PrismaService,
     private cloudinary: CloudinaryService,
+    private ideaService: IdeasService,
   ) {}
+
+  async getUserData(userId: string) {
+    const p = await this.prisma.extended.personalInfo.findUnique({
+      where: { userId },
+    });
+    console.log({ p });
+    return this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+  }
+
+  async deleteUser(userId: string) {
+    const user = await this.prisma.extended.user.findUniqueOrThrow({
+      where: { id: userId },
+      include: { role: { select: { role: true } } },
+    });
+
+    //Because this contains an image, and this will invoked the extended functionality
+    if (user.role.role === Roles.ENTREPRENEUR) {
+      const userIdeas = await this.prisma.userOnIdeas.findMany({
+        where: { user },
+      });
+      await Promise.all(
+        userIdeas.map((e) => this.ideaService.remove(e.ideaId)),
+      );
+      await this.prisma.extended.personalInfo.delete({
+        where: { userId },
+      });
+    } else
+      await this.prisma.extended.professionalInformation.delete({
+        where: { userId },
+      });
+    return this.prisma.extended.user.delete({ where: { id: userId } });
+  }
 
   async saveUserProfile(
     userId: string,
@@ -179,6 +213,11 @@ export class UserService {
       data: onboardingStep,
     };
   }
+
+  // async deleteUser(userId: string): Promise<CommonMessageResponse> {
+  //   //Delete Ideas linked to user
+  //   //
+  // }
 
   async updateUserOnboardingStep(
     userId: string,
