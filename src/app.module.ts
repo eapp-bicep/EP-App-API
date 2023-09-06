@@ -17,6 +17,9 @@ import {
 import { MyTwilioModule } from './global/my-twilio/my-twilio.module';
 import { CloudinaryModule } from './dynamic-modules/cloudinary/cloudinary.module';
 import { InfoModule } from './features/info/info.module';
+import { MeetingsModule } from './features/meetings/meetings.module';
+import { GoogleModule } from './global/google/google.module';
+import { RatingModule } from './features/rating/rating.module';
 
 @Module({
   imports: [
@@ -41,6 +44,9 @@ import { InfoModule } from './features/info/info.module';
     MyTwilioModule,
     CloudinaryModule,
     InfoModule,
+    MeetingsModule,
+    GoogleModule,
+    RatingModule,
   ],
   controllers: [],
   providers: [

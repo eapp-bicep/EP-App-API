@@ -1,3 +1,10 @@
 {
-  "cSpell.words": ["datasources", "preneur", "streamifier"]
+  "cSpell.words": [
+    "abusiveexperiencereport",
+    "datasources",
+    "googleauth",
+    "preneur",
+    "streamifier"
+  ],
+  "prisma.fileWatcher": false
 }

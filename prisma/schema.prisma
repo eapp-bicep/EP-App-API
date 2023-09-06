@@ -24,6 +24,18 @@ enum DocumentType {
   MENTOR_RESUME
 }
 
+enum MeetingRequestStatus {
+  ACCEPTED
+  PENDING
+  CANCELLED
+  REJECTED
+  FINISHED
+}
+
+enum RatingType {
+  MENTOR
+}
+
 // Independent Models
 model Occupation {
   id             String @id @default(uuid())
@@ -80,6 +92,16 @@ model Address {
   PersonalInfo PersonalInfo[]
 
   @@map("addresses")
+}
+
+model Slot {
+  id String @id @default(uuid())
+
+  slotTime DateTime  @db.Timetz()
+  duration Int
+  Meeting  Meeting[]
+
+  @@map("slots")
 }
 
 //-------
@@ -188,6 +210,11 @@ model User {
   UserOnIdeas             UserOnIdeas[]
   ProfessionalInformation ProfessionalInformation[]
   Subscription            Subscription[]
+
+  MeetingScheduleBy   Meeting[]        @relation("scheduledBy")
+  MeetingScheduleWith Meeting[]        @relation("scheduledWith")
+  Rating              Rating[]
+  UsersOnRatings      UserOnRatings[]
 
   @@index(username)
   @@index(email)
@@ -313,4 +340,58 @@ model Subscription {
 
   @@unique([userId, planId])
   @@map("subscriptions")
+}
+
+model Meeting {
+  id String @id @default(uuid())
+
+  scheduledBy       User?   @relation(fields: [scheduledByUserId], references: [id], name: "scheduledBy", onDelete: SetNull)
+  scheduledByUserId String?
+
+  scheduledWith       User?   @relation(fields: [scheduledWithUserId], references: [id], name: "scheduledWith", onDelete: SetNull)
+  scheduledWithUserId String?
+
+  slot   Slot?   @relation(fields: [slotId], references: [id])
+  slotId String?
+
+  requestStatus MeetingRequestStatus @default(PENDING)
+  meetingLink   String //Hangout Link
+  requestId     String?
+  htmlLink      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([scheduledByUserId, scheduledWithUserId, slotId])
+  @@map("meetings")
+}
+
+//Can be for mentors and any other things
+model Rating {
+  id String @id @default(uuid())
+
+  type RatingType
+
+  rating Int //Out of 5
+
+  ratedByUser   User   @relation(fields: [ratedByUserId], references: [id])
+  ratedByUserId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  UsersOnRatings UserOnRatings[]
+
+  @@map("ratings")
+}
+
+//Relation table between user ratings
+model UserOnRatings {
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  rating   Rating @relation(fields: [ratingId], references: [id])
+  ratingId String
+
+  @@unique([userId, ratingId])
 }

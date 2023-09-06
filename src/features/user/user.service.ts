@@ -7,7 +7,12 @@ import { SaveUserProfileDto } from './dto/save-user-profile.dto';
 import { CommonMessageResponse, ResponseWithData } from 'src/types';
 import { PrismaService } from 'src/global/prisma';
 import { CloudinaryService } from 'src/dynamic-modules/cloudinary';
-import { DocumentType, OnboardingStepOnRole, Roles } from '@prisma/client';
+import {
+  DocumentType,
+  OnboardingStepOnRole,
+  Roles,
+  User,
+} from '@prisma/client';
 import { SaveBusinessInfoDto, SaveProfessionalInfoDto } from './dto';
 import { IdeasService } from '../ideas';
 
@@ -214,10 +219,37 @@ export class UserService {
     };
   }
 
-  // async deleteUser(userId: string): Promise<CommonMessageResponse> {
-  //   //Delete Ideas linked to user
-  //   //
-  // }
+  async getMentorsList(): Promise<ResponseWithData<Partial<User>[]>> {
+    const mentors = await this.prisma.user.findMany({
+      where: { role: { role: Roles.MENTOR } },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        PersonalInfo: {
+          select: {
+            firstName: true,
+            lastName: true,
+            occupation: {
+              select: {
+                id: true,
+                occupationName: true,
+              },
+            },
+            profileImage: {
+              select: {
+                imgDownloadUrl: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    return {
+      message: `We have found ${mentors.length} mentors.`,
+      data: mentors,
+    };
+  }
 
   async updateUserOnboardingStep(
     userId: string,

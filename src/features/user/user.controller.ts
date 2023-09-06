@@ -21,6 +21,11 @@ export class UserController {
     return this.userService.getUserData(userId);
   }
 
+  @Get('/mentors')
+  getMentorList() {
+    return this.userService.getMentorsList();
+  }
+
   @Delete()
   deleteUser(@GetCurrentUser('id') userId: string) {
     return this.userService.deleteUser(userId);
