@@ -23,7 +23,7 @@ export class AuthService {
     const passwordHash = await this.hashData(authDto.password);
     const onboardingStep = await this.userService.getOnboardingStep(
       'SignUp',
-      Roles.ENTREPRENEUR,
+      authDto.role,
     );
     const user = await this.prisma.user.create({
       data: {
@@ -32,19 +32,32 @@ export class AuthService {
         onboardingStep: {
           connect: onboardingStep,
         },
-        role: { connect: { role: Roles.ENTREPRENEUR } },
+        role: { connect: { role: authDto.role } },
       },
     });
 
     const tokens = await this.getTokens(user.id, user.username);
+    await this.updateRtHash(user.id, tokens.refreshToken);
+    const nextOnboardingStep = await this.userService.getOnboardingStep(
+      'EmailVerification',
+      authDto.role,
+    );
     const {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       passwordHash: _,
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       refreshTokenHash: __,
       ...filteredUser
-    } = await this.updateRtHash(user.id, tokens.refreshToken);
-    return { ...filteredUser, ...tokens };
+    } = await this.prisma.user.update({
+      where: { id: user.id },
+      data: { onboardingStep: { connect: nextOnboardingStep } },
+      include: { onboardingStep: { include: { role: true } } },
+    });
+    return {
+      ...filteredUser,
+      ...tokens,
+      // currentOnboardingStep: filteredUser.onboardingStep.stepName,
+    };
   }
 
   async login(loginDto: LoginAuthDto): Promise<Tokens> {
@@ -105,6 +118,7 @@ export class AuthService {
     const user = await this.prisma.user.update({
       where: { id: userId },
       data: { refreshTokenHash: hash },
+      include: { onboardingStep: { include: { role: true } } },
     });
     return user;
   }

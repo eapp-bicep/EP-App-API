@@ -25,7 +25,7 @@ export class OnboardingStepService {
 
   async findAll(): Promise<ResponseWithData<OnboardingStepOnRole[]>> {
     const onboardingSteps = await this.prisma.onboardingStepOnRole.findMany({
-      include: { role: { select: { id: true } } },
+      include: { role: { select: { id: true, role: true } } },
     });
     return {
       message: `${onboardingSteps.length} OnboardingSteps fetched.`,

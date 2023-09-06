@@ -4,16 +4,11 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { SaveUserProfileDto } from './dto/save-user-profile.dto';
-import { CommonMessageResponse } from 'src/types';
+import { ResponseWithData } from 'src/types';
 import { PrismaService } from 'src/global/prisma';
 import { CloudinaryService } from 'src/dynamic-modules/cloudinary';
-import {
-  DocumentType,
-  OnboardingStepOnRole,
-  Roles,
-  User,
-} from '@prisma/client';
-import { SaveBusinessInfoDto } from './dto';
+import { DocumentType, OnboardingStepOnRole, Roles } from '@prisma/client';
+import { SaveBusinessInfoDto, SaveProfessionalInfoDto } from './dto';
 
 @Injectable()
 export class UserService {
@@ -26,7 +21,7 @@ export class UserService {
     userId: string,
     saveUserProfileDto: SaveUserProfileDto,
     profileImage: Express.Multer.File,
-  ): Promise<CommonMessageResponse> {
+  ): Promise<ResponseWithData<OnboardingStepOnRole>> {
     if (!profileImage)
       throw new BadRequestException('Profile image is not included.');
 
@@ -40,7 +35,7 @@ export class UserService {
 
     const image = await this.cloudinary.uploadFile(
       profileImage,
-      `${userId}/profile`,
+      `preneur/${userId}/profile`,
     );
 
     await this.prisma.personalInfo.create({
@@ -72,18 +67,34 @@ export class UserService {
       },
     });
 
-    await this.updateUserOnboardingStep(
-      userId,
-      'PersonalInformation',
-      Roles.ENTREPRENEUR,
-    );
-    return { message: 'We have saved your personal data, thank you.' };
+    if (saveUserProfileDto.role === Roles.ENTREPRENEUR) {
+      const { onboardingStep } = await this.updateUserOnboardingStep(
+        userId,
+        'BusinessDetails',
+        saveUserProfileDto.role,
+      );
+      return {
+        message: 'We have saved your personal data, thank you.',
+        data: onboardingStep,
+      };
+    } else if (saveUserProfileDto.role === Roles.MENTOR) {
+      const { onboardingStep } = await this.updateUserOnboardingStep(
+        userId,
+        'ProfessionalInformation',
+        saveUserProfileDto.role,
+      );
+      return {
+        message: 'We have saved your professional data, thank you.',
+        data: onboardingStep,
+      };
+    }
+    throw new BadRequestException('Role not provided');
   }
 
   async saveBusinessInformation(
     userId: string,
     saveBusinessInfoDto: SaveBusinessInfoDto,
-  ): Promise<CommonMessageResponse> {
+  ): Promise<ResponseWithData<{ onboardingStep: OnboardingStepOnRole }>> {
     const exists = await this.prisma.businessInfo.findUnique({
       where: { userId },
     });
@@ -102,40 +113,88 @@ export class UserService {
         },
       },
     });
-    await this.updateUserOnboardingStep(
+    const { onboardingStep } = await this.updateUserOnboardingStep(
       userId,
-      'BusinessDetails',
+      'IdeaInformation',
       Roles.ENTREPRENEUR,
     );
-    return { message: 'Saved business information.' };
+    return {
+      message: 'Saved business information.',
+      data: { onboardingStep },
+    };
   }
 
-  // findAll() {
-  //   return `This action returns all user`;
-  // }
-
-  // findOne(id: number) {
-  //   return `This action returns a #${id} user`;
-  // }
-
-  // update(id: number, updateUserDto: UpdateUserDto) {
-  //   return `This action updates a #${id} user`;
-  // }
-
-  // remove(id: number) {
-  //   return `This action removes a #${id} user`;
-  // }
+  async saveProfessionalInformation(
+    userId: string,
+    saveProfessionalInfoDto: SaveProfessionalInfoDto,
+    resume: Express.Multer.File,
+  ): Promise<ResponseWithData<OnboardingStepOnRole>> {
+    const exists = await this.prisma.professionalInformation.findUnique({
+      where: { userId },
+    });
+    if (exists)
+      throw new ForbiddenException(
+        'Professional Information has been saved already.',
+      );
+    const image = await this.cloudinary.uploadFile(
+      resume,
+      `mentor/${userId}/resume`,
+    );
+    await this.prisma.professionalInformation.create({
+      data: {
+        user: { connect: { id: userId } },
+        ...saveProfessionalInfoDto,
+        resume: {
+          create: {
+            bucket: image.folder,
+            imgDownloadUrl: image.secure_url,
+            imgFullPath: image.public_id,
+            imgName: image.asset_id,
+            imgOriginalName: image.original_filename,
+            imgType: DocumentType.MENTOR_RESUME,
+          },
+        },
+        segment: {
+          connect: {
+            id: saveProfessionalInfoDto.segment,
+          },
+        },
+        fieldsOfInterest: {
+          connect: [
+            ...saveProfessionalInfoDto.fieldsOfInterest.map((fieldId) => ({
+              id: fieldId,
+            })),
+          ],
+        },
+      },
+    });
+    //TODO: Add subscription step
+    const { onboardingStep } = await this.updateUserOnboardingStep(
+      userId,
+      'Finished',
+      Roles.MENTOR,
+    );
+    return {
+      message: 'Saved professional information.',
+      data: onboardingStep,
+    };
+  }
 
   async updateUserOnboardingStep(
     userId: string,
     stepName: string,
     role: Roles,
-  ): Promise<User> {
+  ) {
     const onboardingStep = await this.getOnboardingStep(stepName, role);
     return await this.prisma.user.update({
       where: { id: userId },
       data: {
         onboardingStep: { connect: onboardingStep },
+      },
+      include: {
+        onboardingStep: {
+          include: { role: true },
+        },
       },
     });
   }
@@ -146,6 +205,7 @@ export class UserService {
   ): Promise<OnboardingStepOnRole> {
     return await this.prisma.onboardingStepOnRole.findFirstOrThrow({
       where: { stepName, role: { role } },
+      include: { role: true },
     });
   }
 }

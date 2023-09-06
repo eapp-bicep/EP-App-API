@@ -1,4 +1,11 @@
-import { IsNotEmpty, IsPhoneNumber, IsString, Length } from 'class-validator';
+import { Roles } from '@prisma/client';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsPhoneNumber,
+  IsString,
+  Length,
+} from 'class-validator';
 
 export class VerifyPhoneDto {
   @IsPhoneNumber('IN')
@@ -11,4 +18,8 @@ export class VerifyPhoneOTPDto extends VerifyPhoneDto {
   @Length(6, 6)
   @IsNotEmpty()
   otp: string;
+
+  @IsEnum(Roles)
+  @IsNotEmpty()
+  role: Roles;
 }

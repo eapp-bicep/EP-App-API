@@ -8,8 +8,9 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Cache } from 'cache-manager';
 import { PrismaService } from 'src/global/prisma';
-import { CommonMessageResponse } from 'src/types';
+import { CommonMessageResponse, ResponseWithData } from 'src/types';
 import {
+  FinishOnboardingDto,
   VerifyEmailCodeDto,
   VerifyEmailDto,
   VerifyPhoneDto,
@@ -17,7 +18,7 @@ import {
 } from './dto';
 import { calcDateDiff } from 'src/shared/utils';
 import { MyTwilioService } from 'src/global/my-twilio';
-import { Roles, User } from '@prisma/client';
+import { OnboardingStepOnRole, User } from '@prisma/client';
 import { UserService } from 'src/features/user';
 
 @Injectable()
@@ -46,6 +47,7 @@ export class OnboardingService {
     //TODO: EMAIL is not working due to twilio
     // const response = await this.myTwilio.sendCodeToEmail(verifyEmailDto.email);
     // await this.redis.set(`email_${verifyEmailDto.email}`, response);
+    // console.log({ response });
 
     return {
       message: `Your verification code has been sent to your email.`,
@@ -56,7 +58,7 @@ export class OnboardingService {
   async verifyEmailCode(
     userId: string,
     verifyEmailCodeDto: VerifyEmailCodeDto,
-  ): Promise<CommonMessageResponse> {
+  ): Promise<ResponseWithData<OnboardingStepOnRole>> {
     //TODO: EMAIL is not working due to twilio
     // const emailRes = (await this.redis.get(
     //   `email_${verifyEmailCodeDto.email}`,
@@ -74,20 +76,23 @@ export class OnboardingService {
     //   throw new ForbiddenException(
     //     'Verification code not valid or check your phone number.',
     //   );
-    const onboardingStep = await this.userService.getOnboardingStep(
-      'EmailVerification',
-      Roles.ENTREPRENEUR,
+    const nextOnboardingStep = await this.userService.getOnboardingStep(
+      'PhoneVerification',
+      verifyEmailCodeDto.role,
     );
     await this.prisma.user.update({
       where: { id: userId },
       data: {
         email: verifyEmailCodeDto.email,
         isEmailVerified: true,
-        onboardingStep: { connect: onboardingStep },
+        onboardingStep: { connect: nextOnboardingStep },
       },
     });
     // await this.redis.del(`email_${verifyEmailCodeDto.email}`);
-    return { message: 'Your email has been verified successfully' };
+    return {
+      message: 'Your email has been verified successfully',
+      data: nextOnboardingStep,
+    };
   }
 
   @CacheTTL(1000 * 60 * 10)
@@ -115,7 +120,7 @@ export class OnboardingService {
   async verifyPhoneOTP(
     userId: string,
     verifyOtpDTO: VerifyPhoneOTPDto,
-  ): Promise<CommonMessageResponse> {
+  ): Promise<ResponseWithData<OnboardingStepOnRole>> {
     //TODO: EMAIL is not working due to twilio
     // const phoneRes = (await this.redis.get(
     //   `phone_${verifyOtpDTO.phone}`,
@@ -132,9 +137,9 @@ export class OnboardingService {
     //     'Verification code not valid or check your phone number.',
     //   );
 
-    const onboardingStep = await this.userService.getOnboardingStep(
-      'PhoneVerification',
-      Roles.ENTREPRENEUR,
+    const nextOnboardingStep = await this.userService.getOnboardingStep(
+      'PersonalInformation',
+      verifyOtpDTO.role,
     );
 
     await this.prisma.user.update({
@@ -142,14 +147,20 @@ export class OnboardingService {
       data: {
         phone: verifyOtpDTO.phone,
         isPhoneVerified: true,
-        onboardingStep: { connect: onboardingStep },
+        onboardingStep: { connect: nextOnboardingStep },
       },
     });
     // await this.redis.del(`phone_${verifyOtpDTO.phone}`);
-    return { message: 'Your phone has been verified successfully' };
+    return {
+      message: 'Your phone has been verified successfully',
+      data: nextOnboardingStep,
+    };
   }
 
-  async finishOnboarding(user: User) {
+  async finishOnboarding(
+    user: User,
+    finishDto: FinishOnboardingDto,
+  ): Promise<ResponseWithData<OnboardingStepOnRole>> {
     const profile = await this.prisma.personalInfo.findUnique({
       where: { userId: user.id },
     });
@@ -157,11 +168,27 @@ export class OnboardingService {
       throw new NotAcceptableException(
         'Please complete email and phone verification and also upload your profile.',
       );
-    await this.userService.updateUserOnboardingStep(
+    const u = await this.userService.updateUserOnboardingStep(
       user.id,
       'Finished',
-      Roles.ENTREPRENEUR,
+      finishDto.role,
     );
-    return { message: 'Thank you for your patience. Please proceed.' };
+    return {
+      message: 'Thank you for your patience. Please proceed.',
+      data: u.onboardingStep,
+    };
+  }
+
+  async getCurrentOnboardingStep(
+    userId: string,
+  ): Promise<ResponseWithData<OnboardingStepOnRole>> {
+    const { onboardingStep } = await this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { onboardingStep: { include: { role: true } } },
+    });
+    return {
+      message: `You have completed ${onboardingStep.stepName}.`,
+      data: onboardingStep,
+    };
   }
 }

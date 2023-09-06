@@ -1,4 +1,5 @@
-import { IsEmail, IsNotEmpty, IsString, Length } from 'class-validator';
+import { Roles } from '@prisma/client';
+import { IsEmail, IsEnum, IsNotEmpty, IsString, Length } from 'class-validator';
 
 export class VerifyEmailDto {
   @IsEmail()
@@ -11,4 +12,8 @@ export class VerifyEmailCodeDto extends VerifyEmailDto {
   @Length(6, 6)
   @IsNotEmpty()
   code: string;
+
+  @IsEnum(Roles)
+  @IsNotEmpty()
+  role: Roles;
 }

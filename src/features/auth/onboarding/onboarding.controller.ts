@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Get,
   ParseBoolPipe,
   Post,
   UploadedFile,
@@ -10,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { OnboardingService } from './onboarding.service';
 import {
+  FinishOnboardingDto,
   VerifyEmailCodeDto,
   VerifyEmailDto,
   VerifyPhoneDto,
@@ -18,6 +20,7 @@ import {
 import { GetCurrentUser } from 'src/shared/decorators';
 import {
   SaveBusinessInfoDto,
+  SaveProfessionalInfoDto,
   SaveUserProfileDto,
   UserService,
 } from 'src/features/user';
@@ -31,6 +34,11 @@ export class OnboardingController {
     private userService: UserService,
     private ideaService: IdeasService,
   ) {}
+
+  @Get()
+  getCurrentOnboardingStep(@GetCurrentUser('id') userId: string) {
+    return this.onboardingService.getCurrentOnboardingStep(userId);
+  }
 
   @Post('/verify-email')
   sendEmailVerificationCode(
@@ -103,16 +111,34 @@ export class OnboardingController {
     @UploadedFiles() files: Array<Express.Multer.File>,
   ) {
     await this.ideaService.create(userId, saveIdeaDto, files);
-    await this.userService.updateUserOnboardingStep(
+    const { onboardingStep } = await this.userService.updateUserOnboardingStep(
       userId,
-      'IdeaInformation',
+      'Finished',
       Roles.ENTREPRENEUR,
     );
-    return { message: 'Uploaded idea successfully' };
+    return { message: 'Uploaded idea successfully', data: onboardingStep };
+  }
+
+  //Mentor
+  @Post('/save-professional-info')
+  @UseInterceptors(FileInterceptor('resume'))
+  async saveMentorProfessionalInfo(
+    @GetCurrentUser('id') userId: string,
+    @Body() saveProfessionalInfoDto: SaveProfessionalInfoDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.userService.saveProfessionalInformation(
+      userId,
+      saveProfessionalInfoDto,
+      file,
+    );
   }
 
   @Post('/finish')
-  async finishOnboarding(@GetCurrentUser() user: User) {
-    return this.onboardingService.finishOnboarding(user);
+  async finishOnboarding(
+    @GetCurrentUser() user: User,
+    finishDto: FinishOnboardingDto,
+  ) {
+    return this.onboardingService.finishOnboarding(user, finishDto);
   }
 }

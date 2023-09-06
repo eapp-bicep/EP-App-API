@@ -1,4 +1,6 @@
+import { Roles } from '@prisma/client';
 import {
+  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsPostalCode,
@@ -42,4 +44,8 @@ export class SaveUserProfileDto {
   @IsString()
   @IsNotEmpty()
   country: string;
+
+  @IsEnum(Roles)
+  @IsNotEmpty()
+  role: Roles;
 }

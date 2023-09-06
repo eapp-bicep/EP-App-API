@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsString, IsStrongPassword } from 'class-validator';
+import { Roles } from '@prisma/client';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsString,
+  IsStrongPassword,
+} from 'class-validator';
 import { Match } from 'src/shared/decorators';
 
 export class SignUpAuthDto {
@@ -24,4 +30,8 @@ export class SignUpAuthDto {
   @Match('password', { message: "Passwords don't match." })
   @IsNotEmpty()
   confirmPassword: string;
+
+  @IsEnum(Roles)
+  @IsNotEmpty()
+  role: Roles;
 }
