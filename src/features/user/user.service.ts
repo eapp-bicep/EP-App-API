@@ -10,6 +10,7 @@ import { CloudinaryService } from 'src/dynamic-modules/cloudinary';
 import {
   DocumentType,
   OnboardingStepOnRole,
+  PersonalInfo,
   Roles,
   User,
 } from '@prisma/client';
@@ -25,11 +26,20 @@ export class UserService {
   ) {}
 
   async getUserData(userId: string) {
-    const p = await this.prisma.extended.personalInfo.findUnique({
-      where: { userId },
+    return this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      include: { onboardingStep: { include: { role: true } } },
     });
-    console.log({ p });
-    return this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+  }
+
+  async getUserPersonalProfile(
+    userId: string,
+  ): Promise<ResponseWithData<PersonalInfo>> {
+    const profile = await this.prisma.personalInfo.findUniqueOrThrow({
+      where: { userId },
+      include: { profileImage: true, occupation: true, address: true },
+    });
+    return { message: 'Successfully fetched user profile.', data: profile };
   }
 
   async deleteUser(userId: string) {
@@ -243,11 +253,20 @@ export class UserService {
             },
           },
         },
+        ProfessionalInformation: {
+          select: {
+            segment: true,
+          },
+        },
       },
     });
     return {
       message: `We have found ${mentors.length} mentors.`,
-      data: mentors,
+      data: mentors.map((e) => ({
+        ...e,
+        PersonalInfo: { ...e.PersonalInfo[0] },
+        ProfessionalInformation: { ...e.ProfessionalInformation[0] },
+      })),
     };
   }
 

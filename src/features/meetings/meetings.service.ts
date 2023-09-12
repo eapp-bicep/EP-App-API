@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { CreateMeetingDto } from './dto/create-meeting.dto';
 import { UpdateMeetingDto } from './dto/update-meeting.dto';
 import { GoogleService } from 'src/global/google';
@@ -26,6 +26,19 @@ export class MeetingsService {
     const slot = await this.prisma.slot.findUniqueOrThrow({
       where: { id: createMeetingDto.slot },
     });
+
+    const exists = await this.prisma.meeting.findFirst({
+      where: {
+        scheduledByUserId: user.id,
+        scheduledWithUserId: mentor.id,
+        slotId: slot.id,
+      },
+    });
+
+    if (exists)
+      throw new ForbiddenException(
+        'You have already scheduled a meeting at that slot. Please cancel it before scheduling another at the same time.',
+      );
 
     const startDateTime = DateTime.fromJSDate(createMeetingDto.date).set({
       minute: slot.slotTime.getMinutes(),

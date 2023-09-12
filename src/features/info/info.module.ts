@@ -6,6 +6,7 @@ import { RoleModule } from './role/role.module';
 import { AddressModule } from './address/address.module';
 import { OnboardingStepModule } from './onboarding-step/onboarding-step.module';
 import { DocumentModule } from './document/document.module';
+import { SlotModule } from './slot/slot.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { DocumentModule } from './document/document.module';
     AddressModule,
     OnboardingStepModule,
     DocumentModule,
+    SlotModule,
   ],
 })
 export class InfoModule {}

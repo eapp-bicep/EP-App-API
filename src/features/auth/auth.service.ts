@@ -4,9 +4,8 @@ import { PrismaService } from 'src/global/prisma';
 import { AuthResponse, Tokens } from './types';
 import * as argon from 'argon2';
 import { ConfigService } from '@nestjs/config';
-import { MyArgonOptions } from 'src/types';
+import { MyArgonOptions, ResponseWithData } from 'src/types';
 import { JwtService } from '@nestjs/jwt';
-import { Roles } from '@prisma/client';
 import { LoginAuthDto } from './dto/login-auth.dto';
 import { UserService } from 'src/features/user';
 
@@ -37,7 +36,9 @@ export class AuthService {
     });
 
     const tokens = await this.getTokens(user.id, user.username);
-    await this.updateRtHash(user.id, tokens.refreshToken);
+    await this.updateRtHash(user.id, tokens.refreshToken, {
+      fcmToken: authDto.fcmToken,
+    });
     const nextOnboardingStep = await this.userService.getOnboardingStep(
       'EmailVerification',
       authDto.role,
@@ -78,7 +79,9 @@ export class AuthService {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       refreshTokenHash: __,
       ...filteredUser
-    } = await this.updateRtHash(user.id, tokens.refreshToken);
+    } = await this.updateRtHash(user.id, tokens.refreshToken, {
+      fcmToken: loginDto.fcmToken,
+    });
     return { ...filteredUser, ...tokens };
   }
 
@@ -101,7 +104,7 @@ export class AuthService {
   async refreshTokenGeneration(
     userId: string,
     refreshToken: string,
-  ): Promise<Tokens> {
+  ): Promise<ResponseWithData<Tokens>> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user || !user.refreshTokenHash)
       throw new ForbiddenException('Access denied');
@@ -110,14 +113,19 @@ export class AuthService {
     if (!tokenMatches) throw new ForbiddenException('Access denied.');
 
     const tokens = await this.getTokens(user.id, user.username);
-    return tokens;
+    await this.updateRtHash(userId, tokens.refreshToken, {});
+    return { message: 'Regenerated Tokens', data: tokens };
   }
 
-  private async updateRtHash(userId: string, refreshToken: string) {
+  private async updateRtHash(
+    userId: string,
+    refreshToken: string,
+    { fcmToken }: { fcmToken?: string },
+  ) {
     const hash = await this.hashData(refreshToken);
     const user = await this.prisma.user.update({
       where: { id: userId },
-      data: { refreshTokenHash: hash },
+      data: { refreshTokenHash: hash, fcmToken },
       include: { onboardingStep: { include: { role: true } } },
     });
     return user;

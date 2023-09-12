@@ -21,7 +21,7 @@ export class AccessTokenStrategy extends PassportStrategy(
     });
   }
 
-  async validate(payload: JwtPayload): Promise<User | null> {
+  async validate(payload: JwtPayload): Promise<User | any> {
     const user = await this.prisma.user.findUnique({
       where: { id: payload.id },
     });

@@ -2,6 +2,7 @@ import { Roles } from '@prisma/client';
 import {
   IsEnum,
   IsNotEmpty,
+  IsOptional,
   IsString,
   IsStrongPassword,
 } from 'class-validator';
@@ -34,4 +35,8 @@ export class SignUpAuthDto {
   @IsEnum(Roles)
   @IsNotEmpty()
   role: Roles;
+
+  @IsString()
+  @IsOptional()
+  fcmToken: string;
 }

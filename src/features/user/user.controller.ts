@@ -16,9 +16,13 @@ import { FileInterceptor } from '@nestjs/platform-express';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Get()
+  @Get('/my')
   getUser(@GetCurrentUser('id') userId: string) {
     return this.userService.getUserData(userId);
+  }
+  @Get('/my/profile')
+  getUserProfile(@GetCurrentUser('id') userId: string) {
+    return this.userService.getUserPersonalProfile(userId);
   }
 
   @Get('/mentors')

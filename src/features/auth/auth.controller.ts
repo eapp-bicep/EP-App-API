@@ -28,6 +28,8 @@ export class AuthController {
     return this.authService.login(loginAuthDto);
   }
 
+  //TODO: Dont keep public, come up with a strategy to logout even after refreshtoken expiry
+  // @Public()
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   logout(@GetCurrentUser('id') userId: string) {
