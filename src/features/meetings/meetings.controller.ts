@@ -9,7 +9,10 @@ import {
 } from '@nestjs/common';
 import { MeetingsService } from './meetings.service';
 import { CreateMeetingDto } from './dto/create-meeting.dto';
-import { UpdateMeetingDto } from './dto/update-meeting.dto';
+import {
+  UpdateMeetingDto,
+  UpdateMeetingStatusDto,
+} from './dto/update-meeting.dto';
 import { GetCurrentUser } from 'src/shared/decorators';
 import { User } from '@prisma/client';
 
@@ -40,9 +43,12 @@ export class MeetingsController {
     return this.meetingsService.finishMeeting(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMeetingDto: UpdateMeetingDto) {
-    return this.meetingsService.update(+id, updateMeetingDto);
+  @Patch(':id/status')
+  updateStatus(
+    @Param('id') id: string,
+    @Body() updateMeetingDto: UpdateMeetingStatusDto,
+  ) {
+    return this.meetingsService.updateStatus(id, updateMeetingDto);
   }
 
   @Delete(':id')

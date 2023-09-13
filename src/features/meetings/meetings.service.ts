@@ -1,6 +1,13 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateMeetingDto } from './dto/create-meeting.dto';
-import { UpdateMeetingDto } from './dto/update-meeting.dto';
+import {
+  UpdateMeetingDto,
+  UpdateMeetingStatusDto,
+} from './dto/update-meeting.dto';
 import { GoogleService } from 'src/global/google';
 import { calendar_v3 } from 'googleapis/build/src/apis/calendar/v3';
 import { PrismaService } from 'src/global/prisma';
@@ -90,6 +97,8 @@ export class MeetingsService {
 
     const meeting = await this.prisma.meeting.create({
       data: {
+        summary: createMeetingDto.summary,
+        description: createMeetingDto.description,
         meetingLink: res.data.hangoutLink ?? '',
         requestId: res.data.id,
         htmlLink: res.data.htmlLink,
@@ -119,8 +128,49 @@ export class MeetingsService {
     return { message: `Fetched the meeting.`, data: meeting };
   }
 
-  update(id: number, updateMeetingDto: UpdateMeetingDto) {
-    return `This action updates a #${id} meeting`;
+  async updateStatus(
+    id: string,
+    updateMeetingDto: UpdateMeetingStatusDto,
+  ): Promise<CommonMessageResponse> {
+    const meeting = await this.prisma.meeting.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!meeting) throw new NotFoundException('No such meeting exists.');
+
+    if (meeting.requestStatus == MeetingRequestStatus.FINISHED)
+      throw new ForbiddenException(
+        'Meeting has already been marked as finished.',
+      );
+    if (meeting.requestStatus == MeetingRequestStatus.CANCELLED)
+      throw new ForbiddenException(
+        'Meeting has been cancelled, you cannot modify the status.',
+      );
+
+    const diff = DateTime.fromJSDate(meeting.dateTime).diffNow(
+      'minutes',
+    ).minutes;
+
+    if (updateMeetingDto.status == MeetingRequestStatus.FINISHED && diff < 10)
+      throw new ForbiddenException(
+        `Please wait for ${10 - diff} minutes to update the status.`,
+      );
+    if (updateMeetingDto.status == MeetingRequestStatus.CANCELLED && diff < 0)
+      throw new ForbiddenException('You cannot cancel the meeting now.');
+
+    await this.prisma.meeting.update({
+      where: {
+        id,
+      },
+      data: {
+        requestStatus: updateMeetingDto.status,
+      },
+    });
+    return {
+      message: `Meeting has been marked as ${updateMeetingDto.status.toLowerCase()}, thank you.`,
+    };
   }
 
   async finishMeeting(id: string): Promise<CommonMessageResponse> {

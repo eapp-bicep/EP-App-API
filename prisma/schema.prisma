@@ -211,8 +211,8 @@ model User {
   ProfessionalInformation ProfessionalInformation[]
   Subscription            Subscription[]
 
-  MeetingScheduleBy   Meeting[]        @relation("scheduledBy")
-  MeetingScheduleWith Meeting[]        @relation("scheduledWith")
+  MeetingScheduleBy   Meeting[]       @relation("scheduledBy")
+  MeetingScheduleWith Meeting[]       @relation("scheduledWith")
   Rating              Rating[]
   UsersOnRatings      UserOnRatings[]
 
@@ -358,6 +358,10 @@ model Meeting {
   meetingLink   String //Hangout Link
   requestId     String?
   htmlLink      String?
+
+  summary     String   @default("") //Meet title
+  description String   @default("")
+  dateTime    DateTime @default(now())
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
