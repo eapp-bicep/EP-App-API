@@ -366,7 +366,6 @@ model Meeting {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([scheduledByUserId, scheduledWithUserId, slotId])
   @@map("meetings")
 }
 

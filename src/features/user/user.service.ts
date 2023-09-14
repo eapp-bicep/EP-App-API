@@ -4,7 +4,12 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { SaveUserProfileDto } from './dto/save-user-profile.dto';
-import { CommonMessageResponse, ResponseWithData } from 'src/types';
+import {
+  CommonMessageResponse,
+  DashboardResponse,
+  MentorRating,
+  ResponseWithData,
+} from 'src/types';
 import { PrismaService } from 'src/global/prisma';
 import { CloudinaryService } from 'src/dynamic-modules/cloudinary';
 import {
@@ -16,6 +21,7 @@ import {
 } from '@prisma/client';
 import { SaveBusinessInfoDto, SaveProfessionalInfoDto } from './dto';
 import { IdeasService } from '../ideas';
+import { RatingService } from '../rating';
 
 @Injectable()
 export class UserService {
@@ -23,6 +29,7 @@ export class UserService {
     private prisma: PrismaService,
     private cloudinary: CloudinaryService,
     private ideaService: IdeasService,
+    private ratingService: RatingService,
   ) {}
 
   async getUserData(userId: string) {
@@ -229,9 +236,16 @@ export class UserService {
     };
   }
 
-  async getMentorsList(): Promise<ResponseWithData<Partial<User>[]>> {
+  async getMentorsList(
+    idList?: string[],
+  ): Promise<ResponseWithData<Partial<User>[]>> {
     const mentors = await this.prisma.user.findMany({
-      where: { role: { role: Roles.MENTOR } },
+      where: {
+        role: { role: Roles.MENTOR },
+        id: {
+          in: idList,
+        },
+      },
       select: {
         id: true,
         email: true,
@@ -256,17 +270,67 @@ export class UserService {
         ProfessionalInformation: {
           select: {
             segment: true,
+            resume: true,
           },
         },
       },
     });
+
+    const ratings = await this.ratingService.getAllMentorAverage();
+    const transformedData = mentors.map((e) => ({
+      ...e,
+      PersonalInfo: { ...e.PersonalInfo[0] },
+      ProfessionalInformation: { ...e.ProfessionalInformation[0] },
+      rating:
+        Number.parseFloat(
+          ratings.data?.find((r) => r.userId === e.id)?.rating?.toString() ??
+            '0',
+        ) ?? 0,
+    }));
     return {
       message: `We have found ${mentors.length} mentors.`,
-      data: mentors.map((e) => ({
-        ...e,
-        PersonalInfo: { ...e.PersonalInfo[0] },
-        ProfessionalInformation: { ...e.ProfessionalInformation[0] },
-      })),
+      data: transformedData,
+    };
+  }
+
+  async getDashboardInfo(
+    user: User,
+  ): Promise<ResponseWithData<DashboardResponse>> {
+    const meetings = await this.prisma.meeting.count({
+      where: { scheduledByUserId: user.id, requestStatus: 'FINISHED' },
+    });
+    const ideas = await this.prisma.userOnIdeas.count({ where: { user } });
+    const top = await this.getTopMentors();
+    const topMentors = await this.getMentorsList(
+      top.data?.map((e) => e.userId),
+    );
+
+    //TODO: Reduce mentors data, resume field etc not required.
+    return {
+      message: 'Welcome to E Park App.',
+      data: {
+        ideas,
+        meetings,
+        mentors: topMentors.data ?? [],
+      },
+    };
+  }
+
+  async getTopMentors(): Promise<ResponseWithData<MentorRating[]>> {
+    const mentors: any = await this.prisma.$queryRaw`
+    WITH Q AS (
+    SELECT \"userId\", round(avg(rating), 2) AS \"average\" FROM \"UserOnRatings\"
+      JOIN \"ratings\"
+        ON \"UserOnRatings\".\"ratingId\" = \"ratings\".id
+      WHERE \"ratings\".\"updatedAt\" < (now() - '7 day'::interval)
+    GROUP BY \"userId\"
+        LIMIT 5
+      )
+      SELECT * FROM Q WHERE average > 3.5;
+    `;
+    return {
+      message: 'Took top 5 mentors.',
+      data: mentors,
     };
   }
 

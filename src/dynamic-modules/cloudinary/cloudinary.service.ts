@@ -16,6 +16,7 @@ export class CloudinaryService {
       const uploadStream = cloudinary.uploader.upload_stream(
         { folder: `EParkApp/${this.options.moduleFolder}/${subfolder}` },
         (error, result) => {
+          // result.
           if (error) return reject(error);
           resolve(result!);
         },

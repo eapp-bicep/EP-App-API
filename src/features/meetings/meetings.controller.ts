@@ -33,6 +33,11 @@ export class MeetingsController {
     return this.meetingsService.findAll(userId);
   }
 
+  @Get('/mentor')
+  findInvitedMeetings(@GetCurrentUser('id') mentorId: string) {
+    return this.meetingsService.findInvitedMeetings(mentorId);
+  }
+
   @Get(':id')
   findOne(@GetCurrentUser('id') userId: string, @Param('id') id: string) {
     return this.meetingsService.findOne(userId, id);

@@ -11,6 +11,7 @@ import { UserService } from './user.service';
 import { SaveUserProfileDto } from './dto/save-user-profile.dto';
 import { GetCurrentUser } from 'src/shared/decorators';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { User } from '@prisma/client';
 
 @Controller('user')
 export class UserController {
@@ -20,9 +21,15 @@ export class UserController {
   getUser(@GetCurrentUser('id') userId: string) {
     return this.userService.getUserData(userId);
   }
+
   @Get('/my/profile')
   getUserProfile(@GetCurrentUser('id') userId: string) {
     return this.userService.getUserPersonalProfile(userId);
+  }
+
+  @Get('/my/dashboard')
+  getMyDashboard(@GetCurrentUser() user: User) {
+    return this.userService.getDashboardInfo(user);
   }
 
   @Get('/mentors')

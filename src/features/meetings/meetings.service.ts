@@ -13,7 +13,7 @@ import { calendar_v3 } from 'googleapis/build/src/apis/calendar/v3';
 import { PrismaService } from 'src/global/prisma';
 import { Meeting, MeetingRequestStatus, Roles, User } from '@prisma/client';
 import { CommonMessageResponse, ResponseWithData } from 'src/types';
-import { DateTime } from 'luxon';
+import { DateTime, Duration } from 'luxon';
 
 @Injectable()
 export class MeetingsService {
@@ -42,7 +42,13 @@ export class MeetingsService {
       },
     });
 
-    if (exists)
+    if (
+      exists &&
+      DateTime.fromJSDate(exists.dateTime).diff(
+        DateTime.fromJSDate(createMeetingDto.date),
+        ['day', 'month', 'year'],
+      ) === Duration.fromObject({ day: 0, month: 0, year: 0 })
+    )
       throw new ForbiddenException(
         'You have already scheduled a meeting at that slot. Please cancel it before scheduling another at the same time.',
       );
@@ -105,6 +111,7 @@ export class MeetingsService {
         scheduledBy: { connect: { id: user.id } },
         scheduledWith: { connect: { id: mentor.id } },
         slot: { connect: { id: slot.id } },
+        dateTime: startDateTime.toJSDate(),
       },
     });
     return { message: 'Meeting has been scheduled.', data: meeting };
@@ -114,6 +121,16 @@ export class MeetingsService {
     //User meetings
     const meetings = await this.prisma.meeting.findMany({
       where: { scheduledByUserId: userId },
+    });
+    return { message: `You have ${meetings.length} meetings.`, data: meetings };
+  }
+
+  async findInvitedMeetings(
+    mentorId: string,
+  ): Promise<ResponseWithData<Meeting[]>> {
+    //User meetings
+    const meetings = await this.prisma.meeting.findMany({
+      where: { scheduledWithUserId: mentorId },
     });
     return { message: `You have ${meetings.length} meetings.`, data: meetings };
   }
@@ -159,6 +176,10 @@ export class MeetingsService {
       );
     if (updateMeetingDto.status == MeetingRequestStatus.CANCELLED && diff < 0)
       throw new ForbiddenException('You cannot cancel the meeting now.');
+
+    //From Mentor, should accept at least 10 minutes earlier.
+    if (updateMeetingDto.status == MeetingRequestStatus.ACCEPTED && diff < -10)
+      throw new ForbiddenException('You cannot accept/cancel the meeting now.');
 
     await this.prisma.meeting.update({
       where: {
