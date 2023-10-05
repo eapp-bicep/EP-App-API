@@ -34,10 +34,13 @@ import { ZoomModule } from './global/zoom/zoom.module';
       isGlobal: true,
       useFactory: async (cfg: ConfigService) => ({
         store: await redisStore({
-          socket: {
-            host: cfg.get('REDIS_HOST'),
-            port: cfg.get('REDIS_PORT'),
-          },
+          // socket: {
+
+          //   host: cfg.get('REDIS_HOST'),
+          //   port: cfg.get('REDIS_PORT'),
+
+          // },
+          url: cfg.get('REDIS_URL'),
           ttl: 60 * 60 * 60 * 24,
         }),
       }),
