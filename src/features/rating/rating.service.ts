@@ -71,7 +71,10 @@ export class RatingService {
       .$queryRaw`SELECT \"userId\", round(avg(\"rating\"), 2) as rating FROM \"UserOnRatings\" JOIN \"ratings\" ON \"UserOnRatings\".\"ratingId\" = \"ratings\".\"id\" GROUP BY \"userId\"`;
 
     if (ratings.length <= 0) {
-      throw new NotFoundException('No ratings found.');
+      return {
+        message: 'No ratings found',
+        data: [],
+      };
     }
 
     return {
@@ -88,7 +91,13 @@ export class RatingService {
       .$queryRaw`SELECT \"userId\", round(avg(\"rating\"), 2) as rating FROM \"UserOnRatings\" JOIN \"ratings\" ON \"UserOnRatings\".\"ratingId\" = \"ratings\".\"id\" WHERE \"userId\"=${mentorId} GROUP BY \"userId\" LIMIT 1`;
 
     if (ratings.length <= 0) {
-      throw new NotFoundException('No ratings found for this mentor');
+      return {
+        message: 'No rating found',
+        data: {
+          userId: ratings[0].userId,
+          rating: 0,
+        },
+      };
     }
 
     return {
