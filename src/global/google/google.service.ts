@@ -6,6 +6,9 @@ import { OAuth2Client } from 'google-auth-library';
 import * as path from 'path';
 import { GlobalOptions } from 'googleapis/build/src/apis/abusiveexperiencereport';
 
+/*
+  TODO:Make the app authenticate the tokens from user side and gain access to user calendar rather than our epApp account later
+*/
 @Injectable()
 export class GoogleService implements OnModuleInit {
   private TOKEN_PATH: string;
@@ -27,7 +30,8 @@ export class GoogleService implements OnModuleInit {
     return this.client;
   }
 
-  async onModuleInit() {
+  //TODO: Invoke the methods when user logs in instead of this
+  async onModuleInit() { 
     this.client = await this.authorize();
     this.calendar = google.calendar({ version: 'v3', auth: this.client });
   }

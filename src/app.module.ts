@@ -21,6 +21,7 @@ import { MeetingsModule } from './features/meetings/meetings.module';
 import { GoogleModule } from './global/google/google.module';
 import { RatingModule } from './features/rating/rating.module';
 import { JwtModule } from '@nestjs/jwt';
+import { ZoomModule } from './global/zoom/zoom.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { JwtModule } from '@nestjs/jwt';
     RatingModule,
     //Not global because only the accessToken guard needs it
     JwtModule.register({}),
+    ZoomModule,
   ],
   controllers: [],
   providers: [

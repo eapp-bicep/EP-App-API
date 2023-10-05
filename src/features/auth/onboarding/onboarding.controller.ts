@@ -137,7 +137,7 @@ export class OnboardingController {
   @Post('/finish')
   async finishOnboarding(
     @GetCurrentUser() user: User,
-    finishDto: FinishOnboardingDto,
+    @Body() finishDto: FinishOnboardingDto,
   ) {
     return this.onboardingService.finishOnboarding(user, finishDto);
   }
