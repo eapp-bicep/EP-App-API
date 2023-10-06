@@ -4,6 +4,7 @@ import { UpdateSegmentDto } from './dto/update-segment.dto';
 import { PrismaService } from 'src/global/prisma';
 import { CommonMessageResponse, ResponseWithData } from 'src/types';
 import { Segment } from '@prisma/client';
+import { Public } from 'src/shared/decorators';
 
 @Injectable()
 export class SegmentService {
@@ -18,6 +19,7 @@ export class SegmentService {
     };
   }
 
+  @Public()
   async findAll(): Promise<ResponseWithData<Segment[]>> {
     const segments = await this.prisma.segment.findMany({
       select: { id: true, segmentName: true },
@@ -28,6 +30,7 @@ export class SegmentService {
     };
   }
 
+  @Public()
   async findOne(id: string): Promise<ResponseWithData<Segment>> {
     const segment = await this.prisma.segment.findUniqueOrThrow({
       where: { id },
@@ -38,6 +41,7 @@ export class SegmentService {
     };
   }
 
+  @Public()
   async findOneByName(name: string): Promise<ResponseWithData<Segment>> {
     const segment = await this.prisma.segment.findUniqueOrThrow({
       where: { segmentName: name },

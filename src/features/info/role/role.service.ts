@@ -4,6 +4,7 @@ import { UpdateRoleDto } from './dto/update-role.dto';
 import { CommonMessageResponse, ResponseWithData } from 'src/types';
 import { PrismaService } from 'src/global/prisma';
 import { Role, Roles } from '@prisma/client';
+import { Public } from 'src/shared/decorators';
 
 @Injectable()
 export class RoleService {
@@ -16,6 +17,7 @@ export class RoleService {
     };
   }
 
+  @Public()
   async findAll(): Promise<ResponseWithData<Role[]>> {
     const roles = await this.prisma.role.findMany({
       select: { id: true, role: true },
@@ -26,6 +28,7 @@ export class RoleService {
     };
   }
 
+  @Public()
   async findOne(id: string): Promise<ResponseWithData<Role>> {
     const role = await this.prisma.role.findUniqueOrThrow({
       where: { id },
@@ -36,6 +39,7 @@ export class RoleService {
     };
   }
 
+  @Public()
   async findOneByName(name: Roles): Promise<ResponseWithData<Role>> {
     const role = await this.prisma.role.findUniqueOrThrow({
       where: { role: name },

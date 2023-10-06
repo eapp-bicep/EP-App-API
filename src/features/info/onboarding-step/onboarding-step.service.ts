@@ -4,6 +4,7 @@ import { UpdateOnboardingStepDto } from './dto/update-onboarding-step.dto';
 import { CommonMessageResponse, ResponseWithData } from 'src/types';
 import { PrismaService } from 'src/global/prisma';
 import { OnboardingStepOnRole } from '@prisma/client';
+import { Public } from 'src/shared/decorators';
 
 @Injectable()
 export class OnboardingStepService {
@@ -23,6 +24,7 @@ export class OnboardingStepService {
     };
   }
 
+  @Public()
   async findAll(): Promise<ResponseWithData<OnboardingStepOnRole[]>> {
     const onboardingSteps = await this.prisma.onboardingStepOnRole.findMany({
       include: { role: { select: { id: true, role: true } } },
@@ -33,6 +35,7 @@ export class OnboardingStepService {
     };
   }
 
+  @Public()
   async findOne(id: string): Promise<ResponseWithData<OnboardingStepOnRole>> {
     const onboardingStep =
       await this.prisma.onboardingStepOnRole.findUniqueOrThrow({
@@ -44,6 +47,7 @@ export class OnboardingStepService {
     };
   }
 
+  @Public()
   async findOneByName(
     name: string,
   ): Promise<ResponseWithData<OnboardingStepOnRole>> {

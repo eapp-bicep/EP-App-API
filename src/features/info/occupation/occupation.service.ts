@@ -4,6 +4,7 @@ import { UpdateOccupationDto } from './dto/update-occupation.dto';
 import { CommonMessageResponse, ResponseWithData } from 'src/types';
 import { PrismaService } from 'src/global/prisma';
 import { Occupation } from '@prisma/client';
+import { Public } from 'src/shared/decorators';
 
 @Injectable()
 export class OccupationService {
@@ -18,6 +19,7 @@ export class OccupationService {
     };
   }
 
+  @Public()
   async findAll(): Promise<ResponseWithData<Occupation[]>> {
     const occupations = await this.prisma.occupation.findMany({
       select: { id: true, occupationName: true },
@@ -28,6 +30,7 @@ export class OccupationService {
     };
   }
 
+  @Public()
   async findOne(id: string): Promise<ResponseWithData<Occupation>> {
     const occupation = await this.prisma.occupation.findUniqueOrThrow({
       where: { id },
@@ -38,6 +41,7 @@ export class OccupationService {
     };
   }
 
+  @Public()
   async findOneByName(name: string): Promise<ResponseWithData<Occupation>> {
     const occupation = await this.prisma.occupation.findUniqueOrThrow({
       where: { occupationName: name },
